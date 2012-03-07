@@ -9,22 +9,25 @@
  */
 class Kohana_Log_GELF extends Log_Writer {
 
-	protected $_hostname = '127.0.0.1';
-	protected $_port = 12201;
+	protected $_hostname;
+	protected $_port;
+	protected $_facility;
 
 	/**
 	 * Creates a new GELF logger.
 	 *
-	 *     $writer = new Log_File($hostname, $port);
+	 *     $writer = new Log_File($hostname, $port, $facility);
 	 *
 	 * @param   string  $hostname  Graylog2 Server Hostname
 	 * @param   int     $port      Graylog2 Server Port
+	 * @param   string  $facility  Graylog2 Facility
 	 * @return  void
 	 */
-	public function __construct($hostname = '127.0.0.1', $port = 12201)
+	public function __construct($hostname = '127.0.0.1', $port = 12201, $facility = 'Kohana')
 	{
 		$this->_hostname = $hostname;
 		$this->_port = $port;
+		$this->_facility = $facility;
 	}
 
 	/**
@@ -43,26 +46,30 @@ class Kohana_Log_GELF extends Log_Writer {
 			require_once Kohana::find_file('vendor/gelf', 'GELFMessagePublisher');
 
 			$publisher = new GELFMessagePublisher($this->_hostname, $this->_port);
-			
+
 			foreach ($messages as $message)
 			{
-				$message = new GELFMessage();
+				$gmessage = new GELFMessage();
 
-				$message->setTimestamp($message['time']);
-				$message->setLevel($message['level']);
-				$message->setShortMessage($message['body']);
-				$message->setFullMessage($message['trace']);
-				$message->setFile($message['file']);
-				$message->setLine($message['line']);
-				$message->setAdditional('class', $message['class']);
-				$message->setAdditional('function', $message['function']);
-				
+				$host = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'Unknown';
+				$facility = isset($message['additional']['facility']) ? isset($message['additional']['facility']) : $this->_facility;
+
+				$gmessage->setHost($host);
+				$gmessage->setTimestamp($message['time']);
+				$gmessage->setLevel($message['level']);
+				$gmessage->setShortMessage($message['body']);
+				$gmessage->setFullMessage(var_export($message['trace'], TRUE));
+				$gmessage->setFile($message['file']);
+				$gmessage->setLine($message['line']);
+				$gmessage->setAdditional('class', $message['class']);
+				$gmessage->setAdditional('function', $message['function']);
+
 				foreach ($message['additional'] as $key => $value)
 				{
-					$message->setAdditional($key, $value);
+					$gmessage->setAdditional($key, $value);
 				}
 
-				$publisher->publish($message);
+				$publisher->publish($gmessage);
 			}
 		}
 		catch (Exception $e)
