@@ -1,0 +1,3 @@
+[submodule "vendor/gelf"]
+	path = vendor/gelf
+	url = https://github.com/Graylog2/gelf-php.git
