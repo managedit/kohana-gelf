@@ -21,7 +21,7 @@ class Kohana_Log_GELF extends Log_Writer {
 	 * @param   int     $port      Graylog2 Server Port
 	 * @return  void
 	 */
-	public function __construct($hostname, $port)
+	public function __construct($hostname = '127.0.0.1', $port = 12201)
 	{
 		$this->_hostname = $hostname;
 		$this->_port = $port;
